@@ -23,9 +23,6 @@ import ru.yandex.practicum.service.shared.storage.EventStateRepository;
 import ru.yandex.practicum.service.shared.storage.UserRepository;
 
 import javax.persistence.EntityManager;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,10 +69,6 @@ public class PublicEventService {
                                     String sort,
                                     int from,
                                     int size) {
-        //CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-        //CriteriaQuery<Event> query = criteriaBuilder.createQuery(Event.class);
-        //Root<Event> customer = query.from(Event.class);
-
         Page<Event> eventPage;
         if (sort == null)
             eventPage = eventRepository.findAll(PageRequest.of(from, size));

@@ -35,7 +35,7 @@ public class AdminCompilationService {
 
     public CompilationDto addCompilation(NewCompilationDto newCompilation) {
         List<EventShortDto> events = new ArrayList<>();
-        for (Long id : newCompilation.getEvents()) {
+        for (Long id : newCompilation.getEvents()) {  // наполнение списка событий для CompilationDto
             Optional<Event> event = eventRepository.findById(id);
             if (event.isEmpty())
                 throw new NotFoundException("event id=" + id + " not found");

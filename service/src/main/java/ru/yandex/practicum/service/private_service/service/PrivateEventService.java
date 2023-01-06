@@ -99,8 +99,8 @@ public class PrivateEventService {
     }
 
     public EventFullDto addEvent(long userId, NewEventDto eventNew) {
-        //if (userRepository.existsById(userId))
-        //    throw new NotFoundException("user id=" + userId + " not found");
+        if (userRepository.existsById(userId))
+            throw new NotFoundException("user id=" + userId + " not found");
         if (LocalDateTime.now().plusHours(2)
                 .isAfter(LocalDateTime.parse(eventNew.getEventDate(),
                         new DateTimeFormat().getFormatter())))
@@ -117,7 +117,7 @@ public class PrivateEventService {
                 .title(eventNew.getTitle())
                 .initiatorId(userId)
                 .createdOn(LocalDateTime.now())
-                .publishedOn(null) //????
+                .publishedOn(null)
                 .eventStateId(1)
                 .confirmedRequests(0)
                 .build();

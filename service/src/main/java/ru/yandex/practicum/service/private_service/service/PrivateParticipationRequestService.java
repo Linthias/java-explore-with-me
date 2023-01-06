@@ -80,7 +80,7 @@ public class PrivateParticipationRequestService {
                 = ParticipationRequestDtoMapper.toRequestDto(participationRequestRepository.saveAndFlush(request.get()),
                 requestStateRepository.findById(request.get().getStatusId()).get());
 
-        if (event.get().getConfirmedRequests() == event.get().getParticipantLimit()) {
+        if (event.get().getConfirmedRequests() == event.get().getParticipantLimit()) {  // отклонение прочих заявок, если лимит достигнут
             List<ParticipationRequest> requestsToCancel
                     = participationRequestRepository.findByEventIdAndStatusId(eventId, 1);
 
@@ -89,28 +89,6 @@ public class PrivateParticipationRequestService {
                 participationRequestRepository.save(requestToCancel);
             }
         }
-        /*
-        int currentParticipants = participationRequestRepository.countByEventIdAndStatusId(eventId, 2);
-        if (event.get().getParticipantLimit() <= currentParticipants)
-            request.get().setStatusId(3);
-        else
-            request.get().setStatusId(2);
-
-        ParticipationRequestDto result
-                = ParticipationRequestDtoMapper.toRequestDto(participationRequestRepository.saveAndFlush(request.get()),
-                requestStateRepository.findById(request.get().getStatusId()).get());
-
-        currentParticipants = participationRequestRepository.countByEventIdAndStatusId(eventId, 2);
-        if (event.get().getParticipantLimit() == currentParticipants) {
-            List<ParticipationRequest> requestsToCancel
-                    = participationRequestRepository.findByEventIdAndStatusId(eventId, 1);
-
-            for (ParticipationRequest requestToCancel : requestsToCancel) {
-                requestToCancel.setStatusId(3);
-                participationRequestRepository.save(requestToCancel);
-            }
-        }
-         */
 
         return result;
     }
@@ -129,10 +107,6 @@ public class PrivateParticipationRequestService {
         Optional<ParticipationRequest> request = participationRequestRepository.findById(reqId);
         if (request.isEmpty())
             throw new NotFoundException("participation request id=" + reqId + " not found");
-
-        //if (!event.get().isModerationRequired() || event.get().getParticipantLimit() == 0)
-        //    throw new RuntimeException(); // запрос уже одобрен/одобрение не требуется; возможно, здесь это не нужно
-        // т.е. можно отклонить даже принятые запросы на участие
 
         request.get().setStatusId(3);
         return ParticipationRequestDtoMapper.toRequestDto(participationRequestRepository.save(request.get()),

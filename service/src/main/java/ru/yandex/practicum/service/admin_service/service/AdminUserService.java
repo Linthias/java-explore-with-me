@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.service.admin_service.dto.NewUserRequest;
 import ru.yandex.practicum.service.shared.dto.UserDto;
 import ru.yandex.practicum.service.shared.dto.UserDtoMapper;
-import ru.yandex.practicum.service.shared.exceptions.BadRequestException;
 import ru.yandex.practicum.service.shared.exceptions.ConflictException;
 import ru.yandex.practicum.service.shared.exceptions.NotFoundException;
 import ru.yandex.practicum.service.shared.model.User;
@@ -44,10 +43,6 @@ public class AdminUserService {
     }
 
     public UserDto addUser(NewUserRequest newUser) {
-        //if (newUser.getName() == null || "".equals(newUser.getName()))
-        //    throw new BadRequestException("new user name is empty");
-        //if (newUser.getEmail() == null || "".equals(newUser.getEmail()))
-        //    throw new BadRequestException("new user email is empty");
         Set<String> userNames = new HashSet<>(userRepository.findUserNames());
         if (userNames.contains(newUser.getName()))
             throw new ConflictException("user name=" + newUser.getName() + " already exists");
