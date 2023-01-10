@@ -12,7 +12,6 @@ import ru.yandex.practicum.statistics.storage.EndpointHitRepository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Path;
