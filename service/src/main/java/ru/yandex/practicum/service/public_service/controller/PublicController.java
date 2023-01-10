@@ -36,7 +36,7 @@ public class PublicController {
 
     @GetMapping("/events")
     public List<EventShortDto> getEvents(@RequestParam(required = false) String text,
-                                         @RequestParam(required = false) int[] categories,
+                                         @RequestParam(required = false, name = "categories") int[] categoryIds,
                                          @RequestParam(required = false) Boolean paid,
                                          @RequestParam(required = false) String rangeStart,
                                          @RequestParam(required = false) String rangeEnd,
@@ -47,10 +47,10 @@ public class PublicController {
                                          HttpServletRequest request) {
         log.info(
                 "GET: /events?text={}&categories={}&paid={}&rangeStart={}&rangeEnd={}&onlyAvailable={}&sort={}&from={}&size={}",
-                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
+                text, categoryIds, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
         client.sendRequestInfo("ewm-main-service", request.getRemoteAddr(), request.getRequestURI());
         return eventService.getEvents(text,
-                categories,
+                categoryIds,
                 paid,
                 rangeStart,
                 rangeEnd,

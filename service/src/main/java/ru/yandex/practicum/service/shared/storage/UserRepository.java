@@ -12,6 +12,7 @@ import java.util.List;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> findAllByIdIn(List<Long> ids, Pageable pageable);
+    List<User> findByIdIn(List<Long> ids);
     @Query(value = "select user_name from users", nativeQuery = true)
     List<String> findUserNames();
 }

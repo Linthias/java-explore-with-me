@@ -11,8 +11,9 @@ import java.util.Optional;
 
 @Repository
 public interface CompilationEventsRepository extends JpaRepository<CompilationEvents, Long> {
-    //List<CompilationEvents> findByCompilationId(long compId);
     @Query(value = "select event_id from compilations_events where compilation_id = :compId", nativeQuery = true)
     List<Long> findEventIds(@Param("compId") long compId);
     Optional<CompilationEvents> findByCompilationIdAndEventId(long compId, long eventId);
+
+    List<CompilationEvents> findByCompilationIdIn(List<Long> compilationIds);
 }

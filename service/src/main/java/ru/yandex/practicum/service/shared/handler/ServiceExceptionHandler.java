@@ -26,7 +26,7 @@ import java.util.List;
 public class ServiceExceptionHandler {
     @ExceptionHandler(value = Exception.class)
     public ResponseEntity<ApiError> handleException(Exception e) {
-        log.info(e.getClass().getSimpleName() + " " + e.getMessage());
+        log.info("{} {}", e.getClass().getSimpleName(), e.getMessage());
         HttpStatus httpStatus;
 
         if (e.getClass() == BadRequestException.class) {
@@ -37,7 +37,7 @@ public class ServiceExceptionHandler {
             httpStatus = HttpStatus.NOT_FOUND;
         } else if (e.getClass() == ConflictException.class) {
             httpStatus = HttpStatus.CONFLICT;
-        } else if (e.getClass() == HttpClientErrorException.Conflict.class){
+        } else if (e.getClass() == HttpClientErrorException.Conflict.class) {
             httpStatus = HttpStatus.CONFLICT;
         } else if (e.getClass() == MissingServletRequestParameterException.class) {
             httpStatus = HttpStatus.BAD_REQUEST;
@@ -47,8 +47,7 @@ public class ServiceExceptionHandler {
             httpStatus = HttpStatus.CONFLICT;
         } else if (e.getClass() == MethodArgumentNotValidException.class) {
             httpStatus = HttpStatus.BAD_REQUEST;
-        }
-        else {
+        } else {
             httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
         }
 

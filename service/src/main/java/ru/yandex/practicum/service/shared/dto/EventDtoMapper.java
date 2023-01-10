@@ -3,7 +3,7 @@ package ru.yandex.practicum.service.shared.dto;
 import ru.yandex.practicum.service.shared.model.Category;
 import ru.yandex.practicum.service.shared.model.DateTimeFormat;
 import ru.yandex.practicum.service.shared.model.Event;
-import ru.yandex.practicum.service.shared.model.EventState;
+//import ru.yandex.practicum.service.shared.model.EventState;
 import ru.yandex.practicum.service.shared.model.User;
 
 public class EventDtoMapper {
@@ -21,12 +21,13 @@ public class EventDtoMapper {
                 .build();
     }
 
-    public static EventFullDto toFullDto(Event event, Category category, User user, EventState eventState) {
+    public static EventFullDto toFullDto(Event event, Category category, User user) {
         String published;
-        if (event.getPublishedOn() == null)
+        if (event.getPublishedOn() == null) {
             published = null;
-        else
+        } else {
             published = event.getPublishedOn().format(new DateTimeFormat().getFormatter());
+        }
 
         return EventFullDto.builder()
                 .annotation(event.getAnnotation())
@@ -44,7 +45,7 @@ public class EventDtoMapper {
                 .participantLimit(event.getParticipantLimit())
                 .publishedOn(published)
                 .requestModeration(event.isModerationRequired())
-                .state(eventState.getName())
+                .state(event.getState().toString())
                 .build();
     }
 }

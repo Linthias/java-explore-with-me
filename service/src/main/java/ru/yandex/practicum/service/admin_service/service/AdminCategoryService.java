@@ -26,23 +26,27 @@ public class AdminCategoryService {
     private final EventRepository eventRepository;
 
     public CategoryDto changeCategory(CategoryDto updateCategory) {
-        Optional<Category> category = categoryRepository.findById(updateCategory.getId());
-        if (category.isEmpty())
+        Optional<Category> categoryOptional = categoryRepository.findById(updateCategory.getId());
+        if (categoryOptional.isEmpty()) {
             throw new BadRequestException("category id=" + updateCategory.getId() + " not found");
+        }
+        Category categoryToChange = categoryOptional.get();
 
         Set<String> categoryNames = new HashSet<>(categoryRepository.findCategoryNames());
-        if (categoryNames.contains(updateCategory.getName()))
+        if (categoryNames.contains(updateCategory.getName())) {
             throw new ConflictException("category name=" + updateCategory.getName() + " already exists");
+        }
 
-        category.get().setName(updateCategory.getName());
+        categoryToChange.setName(updateCategory.getName());
 
-        return CategoryDtoMapper.toCategoryDto(categoryRepository.save(category.get()));
+        return CategoryDtoMapper.toCategoryDto(categoryRepository.save(categoryToChange));
     }
 
     public CategoryDto addCategory(NewCategoryDto newCategory) {
         Set<String> categoryNames = new HashSet<>(categoryRepository.findCategoryNames());
-        if (categoryNames.contains(newCategory.getName()))
+        if (categoryNames.contains(newCategory.getName())) {
             throw new ConflictException("category name=" + newCategory.getName() + " already exists");
+        }
 
         return CategoryDtoMapper.toCategoryDto(categoryRepository.save(Category.builder()
                 .name(newCategory.getName())
@@ -50,11 +54,13 @@ public class AdminCategoryService {
     }
 
     public void removeCategory(long catId) {
-        if (!categoryRepository.existsById(catId))
+        if (!categoryRepository.existsById(catId)) {
             throw new NotFoundException("category id=" + catId + " not found");
+        }
 
-        if (eventRepository.countByCategoryId(catId) != 0)
+        if (eventRepository.countByCategoryId(catId) != 0) {
             throw new ForbiddenException("category id=" + catId + " still has events");
+        }
 
         categoryRepository.deleteById(catId);
     }

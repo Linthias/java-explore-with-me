@@ -24,8 +24,8 @@ public class Compilation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(name = "is_pinned", nullable = false)
-    private boolean isPinned;
+    @Column(nullable = false)
+    private boolean pinned;
 
     @Column(nullable = false, length = 100)
     private String title;

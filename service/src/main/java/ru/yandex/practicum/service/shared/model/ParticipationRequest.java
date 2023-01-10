@@ -2,6 +2,8 @@ package ru.yandex.practicum.service.shared.model;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -35,6 +37,7 @@ public class ParticipationRequest {
     @Column(name = "requester_id", nullable = false)
     private long requesterId;
 
-    @Column(name = "status_id", nullable = false)
-    private int statusId;
+    @Column(name = "request_state", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private RequestState state;
 }

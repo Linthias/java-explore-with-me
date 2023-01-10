@@ -2,6 +2,8 @@ package ru.yandex.practicum.service.shared.model;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -65,8 +67,9 @@ public class Event {
     @Column(name = "is_moderation_required", nullable = false)
     private boolean isModerationRequired;
 
-    @Column(name = "event_state_id", nullable = false)
-    private int eventStateId;
+    @Column(name = "event_state", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private EventState state;
 
     @Column(nullable = false, length = 120)
     private String title;

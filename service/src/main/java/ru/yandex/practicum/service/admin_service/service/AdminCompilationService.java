@@ -10,9 +10,11 @@ import ru.yandex.practicum.service.shared.dto.EventDtoMapper;
 import ru.yandex.practicum.service.shared.dto.EventShortDto;
 import ru.yandex.practicum.service.shared.exceptions.ForbiddenException;
 import ru.yandex.practicum.service.shared.exceptions.NotFoundException;
+import ru.yandex.practicum.service.shared.model.Category;
 import ru.yandex.practicum.service.shared.model.Compilation;
 import ru.yandex.practicum.service.shared.model.CompilationEvents;
 import ru.yandex.practicum.service.shared.model.Event;
+import ru.yandex.practicum.service.shared.model.User;
 import ru.yandex.practicum.service.shared.storage.CategoryRepository;
 import ru.yandex.practicum.service.shared.storage.CompilationEventsRepository;
 import ru.yandex.practicum.service.shared.storage.CompilationRepository;
@@ -34,61 +36,78 @@ public class AdminCompilationService {
     private final UserRepository userRepository;
 
     public CompilationDto addCompilation(NewCompilationDto newCompilation) {
-        List<EventShortDto> events = new ArrayList<>();
-        for (Long id : newCompilation.getEvents()) {  // наполнение списка событий для CompilationDto
-            Optional<Event> event = eventRepository.findById(id);
-            if (event.isEmpty())
-                throw new NotFoundException("event id=" + id + " not found");
+        List<Event> eventsForNewCompilation = eventRepository.findByIdIn(newCompilation.getEvents());
+        List<EventShortDto> eventsForNewCompilationDtos = new ArrayList<>();
 
-            events.add(EventDtoMapper.toShortDto(event.get(),
-                    categoryRepository.findById(event.get().getCategoryId()).get(),
-                    userRepository.findById(event.get().getInitiatorId()).get()));
+        List<Long> categoryIds = new ArrayList<>();
+        List<Long> initiatorIds = new ArrayList<>();
+        for (Event event : eventsForNewCompilation) {
+            categoryIds.add(event.getCategoryId());
+            initiatorIds.add(event.getInitiatorId());
+        }
+        List<Category> eventsCategories = categoryRepository.findByIdIn(categoryIds);
+        List<User> eventsOwners = userRepository.findByIdIn(initiatorIds);
+        for (Event event : eventsForNewCompilation) {
+            Category category = eventsCategories.stream().filter(cat -> cat.getId() == event.getCategoryId()).findAny().get();
+            User user = eventsOwners.stream().filter(user1 -> user1.getId() == event.getInitiatorId()).findAny().get();
+            eventsForNewCompilationDtos.add(EventDtoMapper.toShortDto(event, category, user));
         }
 
-        Compilation compilation = Compilation.builder()
-                .isPinned(false)
+        Compilation compilationToAdd = Compilation.builder()
+                .pinned(false)
                 .title(newCompilation.getTitle())
                 .build();
-        if (newCompilation.getPinned() != null)
-            compilation.setPinned(newCompilation.getPinned());
+        if (newCompilation.getPinned() != null) {
+            compilationToAdd.setPinned(newCompilation.getPinned());
+        }
 
-        compilation = compilationRepository.saveAndFlush(compilation);
+        compilationToAdd = compilationRepository.saveAndFlush(compilationToAdd);
 
-        for (Long id : newCompilation.getEvents()) {
-            compilationEventsRepository.save(CompilationEvents.builder()
-                    .compilationId(compilation.getId())
-                    .eventId(id)
+        List<CompilationEvents> newCompilationEventsList = new ArrayList<>();
+        for (EventShortDto eventDto : eventsForNewCompilationDtos) {
+            newCompilationEventsList.add(CompilationEvents.builder()
+                    .compilationId(compilationToAdd.getId())
+                    .eventId(eventDto.getId())
                     .build());
         }
 
-        return CompilationDtoMapper.toCompilationDto(events, compilation);
+        compilationEventsRepository.saveAll(newCompilationEventsList);
+
+        return CompilationDtoMapper.toCompilationDto(eventsForNewCompilationDtos, compilationToAdd);
     }
 
     public void removeCompilation(long compId) {
-        if (!compilationRepository.existsById(compId))
+        if (!compilationRepository.existsById(compId)) {
             throw new NotFoundException("compilation id=" + compId + " not found");
+        }
 
         compilationRepository.deleteById(compId);
     }
 
     public void removeEventFromCompilation(long compId, long eventId) {
-        if (!compilationRepository.existsById(compId))
+        if (!compilationRepository.existsById(compId)) {
             throw new NotFoundException("compilation id=" + compId + " not found");
+        }
+
         Optional<CompilationEvents> eventInCompilation
                 = compilationEventsRepository.findByCompilationIdAndEventId(compId, eventId);
-        if (eventInCompilation.isEmpty())
+        if (eventInCompilation.isEmpty()) {
             throw new NotFoundException("event id=" + eventId + " not found");
+        }
 
         compilationEventsRepository.deleteById(eventInCompilation.get().getId());
     }
 
     public void addEventToCompilation(long compId, long eventId) {
-        if (!compilationRepository.existsById(compId))
+        if (!compilationRepository.existsById(compId)) {
             throw new NotFoundException("compilation id=" + compId + " not found");
+        }
+
         Optional<CompilationEvents> eventInCompilation
                 = compilationEventsRepository.findByCompilationIdAndEventId(compId, eventId);
-        if (eventInCompilation.isPresent())
+        if (eventInCompilation.isPresent()) {
             throw new ForbiddenException("event id=" + eventId + " already present in compilation id=" + compId);
+        }
 
         compilationEventsRepository.save(CompilationEvents.builder()
                 .compilationId(compId)
@@ -97,20 +116,24 @@ public class AdminCompilationService {
     }
 
     public void unpinCompilation(long compId) {
-        Optional<Compilation> compilation = compilationRepository.findById(compId);
-        if (compilation.isEmpty())
+        Optional<Compilation> compilationOptional = compilationRepository.findById(compId);
+        if (compilationOptional.isEmpty()) {
             throw new NotFoundException("compilation id=" + compId + " not found");
+        }
+        Compilation compilationToUnpin = compilationOptional.get();
 
-        compilation.get().setPinned(false);
-        compilationRepository.save(compilation.get());
+        compilationToUnpin.setPinned(false);
+        compilationRepository.save(compilationToUnpin);
     }
 
     public void pinCompilation(long compId) {
-        Optional<Compilation> compilation = compilationRepository.findById(compId);
-        if (compilation.isEmpty())
+        Optional<Compilation> compilationOptional = compilationRepository.findById(compId);
+        if (compilationOptional.isEmpty()) {
             throw new NotFoundException("compilation id=" + compId + " not found");
+        }
+        Compilation compilationToPin = compilationOptional.get();
 
-        compilation.get().setPinned(true);
-        compilationRepository.save(compilation.get());
+        compilationToPin.setPinned(true);
+        compilationRepository.save(compilationToPin);
     }
 }

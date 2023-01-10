@@ -2,7 +2,6 @@ package ru.yandex.practicum.service.public_service.service;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.service.shared.dto.CategoryDto;
@@ -23,21 +22,21 @@ public class PublicCategoryService {
 
     public CategoryDto getCategoryById(long catId) {
         Optional<Category> category = categoryRepository.findById(catId);
-        if (category.isEmpty())
+        if (category.isEmpty()) {
             throw new NotFoundException("category id=" + catId + " not found");
+        }
 
         return CategoryDtoMapper.toCategoryDto(category.get());
     }
 
     public List<CategoryDto> getCategories(int from, int size) {
-        Page<Category> categoryPage = categoryRepository.findAll(PageRequest.of(from, size));
-        List<Category> temp = categoryPage.toList();
+        List<Category> categories = categoryRepository.findAll(PageRequest.of(from, size)).toList();
 
-        List<CategoryDto> result = new ArrayList<>();
-        for (Category category : temp) {
-            result.add(CategoryDtoMapper.toCategoryDto(category));
+        List<CategoryDto> categoryDtos = new ArrayList<>();
+        for (Category category : categories) {
+            categoryDtos.add(CategoryDtoMapper.toCategoryDto(category));
         }
 
-        return result;
+        return categoryDtos;
     }
 }

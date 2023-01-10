@@ -29,10 +29,10 @@ public class EndpointHit {
     @Column(nullable = false, length = 100)
     String app;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 2000)
     String uri;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 40)
     String ip;
 
     @Column(name = "hit_timestamp", nullable = false)

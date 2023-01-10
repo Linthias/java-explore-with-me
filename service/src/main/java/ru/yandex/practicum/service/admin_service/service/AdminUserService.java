@@ -2,7 +2,6 @@ package ru.yandex.practicum.service.admin_service.service;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
@@ -26,26 +25,27 @@ public class AdminUserService {
     private final UserRepository userRepository;
 
     public List<UserDto> getUsers(Long[] ids, int from, int size) {
-        Page<User> userPage;
+        PageRequest usersSortedByIdAsc = PageRequest.of(from, size, Sort.by("id").ascending());
+        List<User> users;
         if (ids != null) {
             List<Long> userIds = List.of(ids);
-            userPage = userRepository
-                    .findAllByIdIn(userIds, PageRequest.of(from, size, Sort.by("id").ascending()));
-        } else
-            userPage = userRepository.findAll(PageRequest.of(from, size, Sort.by("id").ascending()));
-
-        List<User> temp = userPage.toList();
-        List<UserDto> result = new ArrayList<>();
-        for (User user : temp) {
-            result.add(UserDtoMapper.toFullDto(user));
+            users = userRepository.findAllByIdIn(userIds, usersSortedByIdAsc).toList();
+        } else {
+            users = userRepository.findAll(usersSortedByIdAsc).toList();
         }
-        return result;
+
+        List<UserDto> usersDtos = new ArrayList<>();
+        for (User user : users) {
+            usersDtos.add(UserDtoMapper.toFullDto(user));
+        }
+        return usersDtos;
     }
 
     public UserDto addUser(NewUserRequest newUser) {
         Set<String> userNames = new HashSet<>(userRepository.findUserNames());
-        if (userNames.contains(newUser.getName()))
+        if (userNames.contains(newUser.getName())) {
             throw new ConflictException("user name=" + newUser.getName() + " already exists");
+        }
 
         return UserDtoMapper.toFullDto(userRepository.save(User.builder()
                 .name(newUser.getName())
@@ -54,8 +54,9 @@ public class AdminUserService {
     }
 
     public void removeUser(Long userId) {
-        if (!userRepository.existsById(userId))
+        if (!userRepository.existsById(userId)) {
             throw new NotFoundException("user id=" + userId + " not found");
+        }
 
         userRepository.deleteById(userId);
     }
