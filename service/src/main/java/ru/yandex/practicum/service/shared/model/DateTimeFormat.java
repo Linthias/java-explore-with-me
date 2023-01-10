@@ -1,7 +1,6 @@
 package ru.yandex.practicum.service.shared.model;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 import java.time.format.DateTimeFormatter;
 

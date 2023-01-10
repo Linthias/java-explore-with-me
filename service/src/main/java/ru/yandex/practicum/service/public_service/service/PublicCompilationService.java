@@ -72,8 +72,8 @@ public class PublicCompilationService {
             uniqueEventIds.add(compilationEvent.getEventId());
         }
 
-        List<Event> AllUniqueEvents = eventRepository.findByIdIn(new ArrayList<>(uniqueEventIds));
-        List<EventShortDto> AllUniqueEventDtos = eventListToShortDtoList(AllUniqueEvents);
+        List<Event> allUniqueEvents = eventRepository.findByIdIn(new ArrayList<>(uniqueEventIds));
+        List<EventShortDto> allUniqueEventDtos = eventListToShortDtoList(allUniqueEvents);
 
         List<CompilationDto> compilationDtos = new ArrayList<>();
         for (Compilation compilation : compilations) {
@@ -82,7 +82,7 @@ public class PublicCompilationService {
             for (CompilationEvents compilationEvent : compilationEventsList) {
                 if (compilationEvent.getCompilationId() == compilation.getId()) {
 
-                    for (EventShortDto eventDto : AllUniqueEventDtos) {
+                    for (EventShortDto eventDto : allUniqueEventDtos) {
                         if (compilationEvent.getEventId() == eventDto.getId()) {
                             eventDtos.add(eventDto);
                             break;
