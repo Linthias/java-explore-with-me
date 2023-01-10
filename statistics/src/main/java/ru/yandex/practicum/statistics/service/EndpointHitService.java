@@ -80,34 +80,6 @@ public class EndpointHitService {
                     .hits(tuple.get(2, Long.class))
                     .build());
         }
-        /*
-        List<ViewStats> result = new ArrayList<>();
-        List<String> uriList;
-        if (uris != null)
-            uriList = List.of(uris);
-        else
-            uriList = endpointHitRepository.findUris();
-
-        for (String uri : uriList) {
-            List<EndpointHit> hits = endpointHitRepository.customFindByUri(uri);
-            if (!hits.isEmpty()) {
-                String appName = hits.get(0).getApp();
-
-                Long uriHits;
-                if (unique)
-                    uriHits = endpointHitRepository.countUniqueHitsForUri(uri, startDate, endDate);
-                else
-                    uriHits = endpointHitRepository.countHitsForUri(uri, startDate, endDate);
-
-                result.add(ViewStats.builder()
-                        .app(appName)
-                        .uri(uri)
-                        .hits(uriHits)
-                        .build());
-            }
-        }
-
-         */
 
         return statisticsDtos;
     }

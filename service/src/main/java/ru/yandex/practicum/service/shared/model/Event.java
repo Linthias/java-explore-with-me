@@ -55,8 +55,8 @@ public class Event {
     @Column(nullable = false)
     private float longtitude;
 
-    @Column(name = "is_paid", nullable = false)
-    private boolean isPaid;
+    @Column(nullable = false)
+    private boolean paid;
 
     @Column(name = "participant_limit", nullable = false)
     private int participantLimit;
@@ -64,8 +64,8 @@ public class Event {
     @Column(name = "published_on")
     private LocalDateTime publishedOn;
 
-    @Column(name = "is_moderation_required", nullable = false)
-    private boolean isModerationRequired;
+    @Column(name = "moderation_required", nullable = false)
+    private boolean moderationRequired;
 
     @Column(name = "event_state", nullable = false)
     @Enumerated(EnumType.STRING)

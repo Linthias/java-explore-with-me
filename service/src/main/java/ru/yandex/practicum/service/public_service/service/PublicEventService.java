@@ -90,7 +90,7 @@ public class PublicEventService {
             predicates.add(categoriesIn);
         }
         if (paid != null) {
-            predicates.add(builder.equal(root.get("isPaid"), paid));
+            predicates.add(builder.equal(root.get("paid"), paid));
         }
         if (rangeStart != null) {
             LocalDateTime startLimit = LocalDateTime.parse(rangeStart, new DateTimeFormat().getFormatter());
