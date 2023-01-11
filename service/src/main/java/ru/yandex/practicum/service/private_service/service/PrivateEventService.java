@@ -26,7 +26,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Getter
@@ -37,26 +37,23 @@ public class PrivateEventService {
     private final UserRepository userRepository;
 
     public List<EventShortDto> getUsersEvents(long userId, int from, int size) {
-        Optional<User> eventOwnerOptional = userRepository.findById(userId);
-        if (eventOwnerOptional.isEmpty()) {
-            throw new NotFoundException("user id=" + userId + " not found");
-        }
-        User eventOwner = eventOwnerOptional.get();
+        User eventOwner = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("user id=" + userId + " not found"));
 
         List<Event> userEvents = eventRepository.findByInitiatorId(userId,
                         PageRequest.of(from, size, Sort.by(Sort.Direction.ASC, "id")));
 
-        List<EventShortDto> userEventsDtos = new ArrayList<>();
+        List<Long> categoryIds = userEvents.stream()
+                .map(Event::getCategoryId)
+                .collect(Collectors.toList());
 
-        List<Long> categoryIds = new ArrayList<>();
-        for (Event event : userEvents) {
-            categoryIds.add(event.getCategoryId());
-        }
         List<Category> eventsCategories = categoryRepository.findByIdIn(categoryIds);
 
+        List<EventShortDto> userEventsDtos = new ArrayList<>();
         for (Event event : userEvents) {
-            Category category = eventsCategories.stream()
-                    .filter(cat -> cat.getId() == event.getCategoryId()).findAny().get();
+            Category category = eventsCategories.stream().filter(cat -> cat.getId() == event.getCategoryId()).findAny()
+                    .orElseThrow(() -> new NotFoundException("category id=" + event.getCategoryId() + " not found"));
+
             userEventsDtos.add(EventDtoMapper.toShortDto(event, category, eventOwner));
         }
 
@@ -64,16 +61,12 @@ public class PrivateEventService {
     }
 
     public EventFullDto changeEvent(long userId, UpdateEventRequest eventUpdate) {
-        Optional<User> user = userRepository.findById(userId);
-        if (user.isEmpty()) {
+        if (!userRepository.existsById(userId)) {
             throw new NotFoundException("user id=" + userId + " not found");
         }
 
-        Optional<Event> eventOptional = eventRepository.findById(eventUpdate.getEventId());
-        if (eventOptional.isEmpty()) {
-            throw new NotFoundException("event id=" + eventUpdate.getEventId() + " not found");
-        }
-        Event event = eventOptional.get();
+        Event event = eventRepository.findById(eventUpdate.getEventId())
+                .orElseThrow(() -> new NotFoundException("event id=" + eventUpdate.getEventId() + " not found"));
 
         if (event.getState().equals(EventState.PUBLISHED)) {
             throw new ForbiddenException("event id=" + event.getId() + " already published");
@@ -109,8 +102,10 @@ public class PrivateEventService {
         }
 
         return EventDtoMapper.toFullDto(eventRepository.save(event),
-                categoryRepository.findById(event.getCategoryId()).get(),
-                userRepository.findById(event.getInitiatorId()).get());
+                categoryRepository.findById(event.getCategoryId())
+                        .orElseThrow(() -> new NotFoundException("category id=" + event.getCategoryId() + " not found")),
+                userRepository.findById(event.getInitiatorId())
+                        .orElseThrow(() -> new NotFoundException("user id=" + event.getInitiatorId() + " not found")));
     }
 
     public EventFullDto addEvent(long userId, NewEventDto eventNew) {
@@ -152,42 +147,35 @@ public class PrivateEventService {
         }
 
         return EventDtoMapper.toFullDto(eventRepository.save(event),
-                categoryRepository.findById(event.getCategoryId()).get(),
-                userRepository.findById(event.getInitiatorId()).get());
+                categoryRepository.findById(event.getCategoryId())
+                        .orElseThrow(() -> new NotFoundException("category id=" + event.getCategoryId() + " not found")),
+                userRepository.findById(event.getInitiatorId())
+                        .orElseThrow(() -> new NotFoundException("user id=" + event.getInitiatorId() + " not found")));
     }
 
     public EventFullDto getEvent(long userId, long eventId) {
-        Optional<User> user = userRepository.findById(userId);
-        if (user.isEmpty()) {
-            throw new NotFoundException("user id=" + userId + " not found");
-        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("user id=" + userId + " not found"));
 
-        Optional<Event> eventOptional = eventRepository.findById(eventId);
-        if (eventOptional.isEmpty()) {
-            throw new NotFoundException("event id=" + eventId + " not found");
-        }
-        Event event = eventOptional.get();
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("event id=" + eventId + " not found"));
 
         if (event.getInitiatorId() != userId) {
             throw new ForbiddenException("event initiator id=" + event.getInitiatorId() + " and user id=" + userId);
         }
 
         return EventDtoMapper.toFullDto(event,
-                categoryRepository.findById(event.getCategoryId()).get(),
-                user.get());
+                categoryRepository.findById(event.getCategoryId())
+                        .orElseThrow(() -> new NotFoundException("category id=" + event.getCategoryId() + " not found")),
+                user);
     }
 
     public EventFullDto cancelEvent(long userId, long eventId) {
-        Optional<User> user = userRepository.findById(userId);
-        if (user.isEmpty()) {
-            throw new NotFoundException("user id=" + userId + " not found");
-        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("user id=" + userId + " not found"));
 
-        Optional<Event> eventOptional = eventRepository.findById(eventId);
-        if (eventOptional.isEmpty()) {
-            throw new NotFoundException("event id=" + eventId + " not found");
-        }
-        Event event = eventOptional.get();
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("event id=" + eventId + " not found"));
 
         if (event.getInitiatorId() != userId) {
             throw new ForbiddenException("event initiator id=" + event.getInitiatorId() + " and user id=" + userId);
@@ -200,7 +188,8 @@ public class PrivateEventService {
         event.setState(EventState.CANCELED);
 
         return EventDtoMapper.toFullDto(eventRepository.save(event),
-                categoryRepository.findById(event.getCategoryId()).get(),
-                user.get());
+                categoryRepository.findById(event.getCategoryId())
+                        .orElseThrow(() -> new NotFoundException("category id=" + event.getCategoryId() + " not found")),
+                user);
     }
 }

@@ -13,10 +13,10 @@ import ru.yandex.practicum.service.shared.exceptions.NotFoundException;
 import ru.yandex.practicum.service.shared.model.User;
 import ru.yandex.practicum.service.shared.storage.UserRepository;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Getter
@@ -34,11 +34,9 @@ public class AdminUserService {
             users = userRepository.findAll(usersSortedByIdAsc).toList();
         }
 
-        List<UserDto> usersDtos = new ArrayList<>();
-        for (User user : users) {
-            usersDtos.add(UserDtoMapper.toFullDto(user));
-        }
-        return usersDtos;
+        return users.stream()
+                .map(UserDtoMapper::toFullDto)
+                .collect(Collectors.toList());
     }
 
     public UserDto addUser(NewUserRequest newUser) {

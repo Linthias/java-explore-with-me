@@ -27,7 +27,6 @@ import javax.persistence.criteria.Root;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 @Getter
@@ -38,28 +37,33 @@ public class PublicEventService {
     private final UserRepository userRepository;
     private final EntityManager entityManager;
 
+    private static final String DATE_SORT = "EVENT_DATE";
+    private static final String VIEWS_SORT = "VIEWS";
+    private static final String BLANK_STRING = "";
+    private static final String EVENT_ANNOTATION = "annotation";
+    private static final String EVENT_DESCRIPTION = "description";
+    private static final String EVENT_CATEGORY = "categoryId";
+    private static final String EVENT_PAID = "paid";
+    private static final String EVENT_DATE = "eventDate";
+    private static final String EVENT_CONFIRMED_REQUESTS = "confirmedRequests";
+    private static final String EVENT_PARTICIPANT_LIMIT = "participantLimit";
+    private static final String EVENT_VIEWS = "views";
+
     public EventFullDto getEventById(long eventId) {
-        Optional<Event> eventOptional = eventRepository.findById(eventId);
-        if (eventOptional.isEmpty()) {
-            throw new NotFoundException("event id=" + eventId + " not found");
-        }
-        Event event = eventOptional.get();
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("event id=" + eventId + " not found"));
 
         if (event.getState().equals(EventState.PENDING) || event.getState().equals(EventState.CANCELED)) {
             throw new ForbiddenException("event id=" + eventId + " not published");
         }
 
-        Optional<Category> eventCategory = categoryRepository.findById(event.getCategoryId());
-        if (eventCategory.isEmpty()) {
-            throw new NotFoundException("category id=" + event.getCategoryId() + " not found");
-        }
+        Category eventCategory = categoryRepository.findById(event.getCategoryId())
+                .orElseThrow(() -> new NotFoundException("category id=" + event.getCategoryId() + " not found"));
 
-        Optional<User> eventInitiator = userRepository.findById(event.getInitiatorId());
-        if (eventInitiator.isEmpty()) {
-            throw new NotFoundException("user id=" + event.getInitiatorId() + " not found");
-        }
+        User eventInitiator = userRepository.findById(event.getInitiatorId())
+                .orElseThrow(() -> new NotFoundException("user id=" + event.getInitiatorId() + " not found"));
 
-        return EventDtoMapper.toFullDto(event, eventCategory.get(), eventInitiator.get());
+        return EventDtoMapper.toFullDto(event, eventCategory, eventInitiator);
     }
 
     public List<EventShortDto> getEvents(String text,
@@ -76,48 +80,51 @@ public class PublicEventService {
         Root<Event> root = query.from(Event.class);
         List<Predicate> predicates = new ArrayList<>();
 
-        if (text != null && !"".equals(text)) {
-            Predicate textInAnnotation = builder.like(root.get("annotation"), text);
-            Predicate textInDescription = builder.like(root.get("description"), text);
+        if (text != null && !BLANK_STRING.equals(text)) {
+            Predicate textInAnnotation = builder.like(root.get(EVENT_ANNOTATION), text);
+            Predicate textInDescription = builder.like(root.get(EVENT_DESCRIPTION), text);
 
             predicates.add(builder.or(textInAnnotation, textInDescription));
         }
         if (categories != null) {
-            CriteriaBuilder.In<Long> categoriesIn = builder.in(root.get("categoryId"));
+            CriteriaBuilder.In<Long> categoriesIn = builder.in(root.get(EVENT_CATEGORY));
             for (long categoryId : categories) {
                 categoriesIn.value(categoryId);
             }
             predicates.add(categoriesIn);
         }
         if (paid != null) {
-            predicates.add(builder.equal(root.get("paid"), paid));
+            predicates.add(builder.equal(root.get(EVENT_PAID), paid));
         }
         if (rangeStart != null) {
             LocalDateTime startLimit = LocalDateTime.parse(rangeStart, new DateTimeFormat().getFormatter());
-            Path<LocalDateTime> dateTimePath = root.get("eventDate");
+            Path<LocalDateTime> dateTimePath = root.get(EVENT_DATE);
 
             predicates.add(builder.greaterThanOrEqualTo(dateTimePath, startLimit));
         }
         if (rangeEnd != null) {
             LocalDateTime endLimit = LocalDateTime.parse(rangeEnd, new DateTimeFormat().getFormatter());
-            Path<LocalDateTime> dateTimePath = root.get("eventDate");
+            Path<LocalDateTime> dateTimePath = root.get(EVENT_DATE);
 
             predicates.add(builder.lessThanOrEqualTo(dateTimePath, endLimit));
         }
         if (onlyAvailable) {
-            predicates.add(builder.lessThan(root.get("confirmedRequests"), root.get("participantLimit")));
+            predicates.add(builder.lessThan(root.get(EVENT_CONFIRMED_REQUESTS), root.get(EVENT_PARTICIPANT_LIMIT)));
         }
         if (sort == null) {
             query.select(root).where(predicates.toArray(new Predicate[]{}));
-        } else if ("EVENT_DATE".equals(sort)) {
-            query.select(root).where(predicates.toArray(new Predicate[]{})).orderBy(builder.asc(root.get("eventDate")));
-        } else if ("VIEWS".equals(sort)) {
-            query.select(root).where(predicates.toArray(new Predicate[]{})).orderBy(builder.desc(root.get("views")));
+        } else if (DATE_SORT.equals(sort)) {
+            query.select(root).where(predicates.toArray(new Predicate[]{})).orderBy(builder.asc(root.get(EVENT_DATE)));
+        } else if (VIEWS_SORT.equals(sort)) {
+            query.select(root).where(predicates.toArray(new Predicate[]{})).orderBy(builder.desc(root.get(EVENT_VIEWS)));
         } else {
             throw new BadRequestException("wrong sort parameter: " + sort);
         }
 
-        List<Event> events = entityManager.createQuery(query).setFirstResult(from).setMaxResults(size).getResultList();
+        List<Event> events = entityManager.createQuery(query)
+                .setFirstResult(from)
+                .setMaxResults(size)
+                .getResultList();
 
         List<EventShortDto> eventsDtos = new ArrayList<>();
 
@@ -127,11 +134,17 @@ public class PublicEventService {
             categoryIds.add(event.getCategoryId());
             initiatorIds.add(event.getInitiatorId());
         }
+
         List<Category> loadedCategories = categoryRepository.findByIdIn(categoryIds);
         List<User> loadedUsers = userRepository.findByIdIn(initiatorIds);
+
         for (Event event : events) {
-            Category category = loadedCategories.stream().filter(cat -> cat.getId() == event.getCategoryId()).findAny().get();
-            User user = loadedUsers.stream().filter(user1 -> user1.getId() == event.getInitiatorId()).findAny().get();
+            Category category = loadedCategories.stream().filter(cat -> cat.getId() == event.getCategoryId()).findAny()
+                    .orElseThrow(() -> new NotFoundException("category id=" + event.getCategoryId() + " not found"));
+
+            User user = loadedUsers.stream().filter(user1 -> user1.getId() == event.getInitiatorId()).findAny()
+                    .orElseThrow(() -> new NotFoundException("user id=" + event.getInitiatorId() + " not found"));
+
             eventsDtos.add(EventDtoMapper.toShortDto(event, category, user));
         }
 

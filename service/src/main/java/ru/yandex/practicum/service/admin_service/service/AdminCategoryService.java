@@ -15,7 +15,6 @@ import ru.yandex.practicum.service.shared.storage.CategoryRepository;
 import ru.yandex.practicum.service.shared.storage.EventRepository;
 
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 @RequiredArgsConstructor
@@ -26,11 +25,8 @@ public class AdminCategoryService {
     private final EventRepository eventRepository;
 
     public CategoryDto changeCategory(CategoryDto updateCategory) {
-        Optional<Category> categoryOptional = categoryRepository.findById(updateCategory.getId());
-        if (categoryOptional.isEmpty()) {
-            throw new BadRequestException("category id=" + updateCategory.getId() + " not found");
-        }
-        Category categoryToChange = categoryOptional.get();
+        Category categoryToChange = categoryRepository.findById(updateCategory.getId())
+                .orElseThrow(() -> new BadRequestException("category id=" + updateCategory.getId() + " not found"));
 
         Set<String> categoryNames = new HashSet<>(categoryRepository.findCategoryNames());
         if (categoryNames.contains(updateCategory.getName())) {

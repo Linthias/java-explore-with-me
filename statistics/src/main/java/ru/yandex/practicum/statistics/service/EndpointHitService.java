@@ -51,13 +51,9 @@ public class EndpointHitService {
             Predicate finalUriPredicate = null;
 
             for (String uri : uris) {
-                if (previousUriPredicate == null) {
-                    previousUriPredicate = builder.like(root.get("uri"), uri);
-                } else {
-                    Predicate currentUriPredicate = builder.like(root.get("uri"), uri);
-                    finalUriPredicate = builder.or(previousUriPredicate, currentUriPredicate);
-                    previousUriPredicate = finalUriPredicate;
-                }
+                Predicate currentUriPredicate = builder.like(root.get("uri"), uri);
+                finalUriPredicate = builder.or(previousUriPredicate, currentUriPredicate);
+                previousUriPredicate = finalUriPredicate;
             }
             predicates.add(finalUriPredicate);
         }

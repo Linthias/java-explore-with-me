@@ -29,7 +29,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 @RequiredArgsConstructor
@@ -40,6 +39,14 @@ public class AdminEventService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final EntityManager entityManager;
+
+    private static final String PENDING_STATE = "PENDING";
+    private static final String PUBLISHED_STATE = "PUBLISHED";
+    private static final String CANCELED_STATE = "CANCELED";
+    private static final String EVENT_INITIATOR = "initiatorId";
+    private static final String EVENT_STATE = "state";
+    private static final String EVENT_CATEGORY = "categoryId";
+    private static final String EVENT_DATE = "eventDate";
 
     public List<EventFullDto> getEvents(long[] users,
                                         String[] states,
@@ -54,7 +61,7 @@ public class AdminEventService {
         List<Predicate> predicates = new ArrayList<>();
 
         if (users != null) {
-            CriteriaBuilder.In<Long> usersIn = builder.in(root.get("initiatorId"));
+            CriteriaBuilder.In<Long> usersIn = builder.in(root.get(EVENT_INITIATOR));
             for (long userId : users) {
                 usersIn.value(userId);
             }
@@ -63,22 +70,22 @@ public class AdminEventService {
         if (states != null) {
             Set<EventState> eventStates = new HashSet<>();
             for (String state : states) {
-                if ("PENDING".equalsIgnoreCase(state))
+                if (PENDING_STATE.equalsIgnoreCase(state))
                     eventStates.add(EventState.PENDING);
-                if ("PUBLISHED".equalsIgnoreCase(state))
+                if (PUBLISHED_STATE.equalsIgnoreCase(state))
                     eventStates.add(EventState.PUBLISHED);
-                if ("CANCELED".equalsIgnoreCase(state))
+                if (CANCELED_STATE.equalsIgnoreCase(state))
                     eventStates.add(EventState.CANCELED);
             }
 
-            CriteriaBuilder.In<EventState> statesIn = builder.in(root.get("state"));
+            CriteriaBuilder.In<EventState> statesIn = builder.in(root.get(EVENT_STATE));
             for (EventState state : eventStates) {
                 statesIn.value(state);
             }
             predicates.add(statesIn);
         }
         if (categories != null) {
-            CriteriaBuilder.In<Long> categoriesIn = builder.in(root.get("categoryId"));
+            CriteriaBuilder.In<Long> categoriesIn = builder.in(root.get(EVENT_CATEGORY));
             for (long categoryId : categories) {
                 categoriesIn.value(categoryId);
             }
@@ -86,19 +93,22 @@ public class AdminEventService {
         }
         if (rangeStart != null) {
             LocalDateTime startLimit = LocalDateTime.parse(rangeStart, new DateTimeFormat().getFormatter());
-            Path<LocalDateTime> dateTimePath = root.get("eventDate");
+            Path<LocalDateTime> dateTimePath = root.get(EVENT_DATE);
 
             predicates.add(builder.greaterThanOrEqualTo(dateTimePath, startLimit));
         }
         if (rangeEnd != null) {
             LocalDateTime endLimit = LocalDateTime.parse(rangeEnd, new DateTimeFormat().getFormatter());
-            Path<LocalDateTime> dateTimePath = root.get("eventDate");
+            Path<LocalDateTime> dateTimePath = root.get(EVENT_DATE);
 
             predicates.add(builder.lessThanOrEqualTo(dateTimePath, endLimit));
         }
 
         query.select(root).where(predicates.toArray(new Predicate[]{}));
-        List<Event> events = entityManager.createQuery(query).setFirstResult(from).setMaxResults(size).getResultList();
+        List<Event> events = entityManager.createQuery(query)
+                .setFirstResult(from)
+                .setMaxResults(size)
+                .getResultList();
 
         List<EventFullDto> eventDtos = new ArrayList<>();
 
@@ -111,8 +121,12 @@ public class AdminEventService {
         List<Category> eventCategories = categoryRepository.findByIdIn(categoryIds);
         List<User> eventOwners = userRepository.findByIdIn(initiatorIds);
         for (Event event : events) {
-            Category category = eventCategories.stream().filter(cat -> cat.getId() == event.getCategoryId()).findAny().get();
-            User user = eventOwners.stream().filter(user1 -> user1.getId() == event.getInitiatorId()).findAny().get();
+            Category category = eventCategories.stream().filter(cat -> cat.getId() == event.getCategoryId()).findAny()
+                    .orElseThrow(() -> new NotFoundException("category id=" + event.getCategoryId() + " not found"));
+
+            User user = eventOwners.stream().filter(user1 -> user1.getId() == event.getInitiatorId()).findAny()
+                    .orElseThrow(() -> new NotFoundException("user id=" + event.getInitiatorId() + " not found"));
+
             eventDtos.add(EventDtoMapper.toFullDto(event, category, user));
         }
 
@@ -120,12 +134,8 @@ public class AdminEventService {
     }
 
     public EventFullDto changeEvent(long eventId, AdminUpdateEventRequest updateEvent) {
-        Optional<Event> eventOptional = eventRepository.findById(eventId);
-        if (eventOptional.isEmpty()) {
-            throw new NotFoundException("event id=" + eventId + " not found");
-        }
-        Event eventToChange = eventOptional.get();
-
+        Event eventToChange = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("event id=" + eventId + " not found"));
 
         if (updateEvent.getAnnotation() != null) {
             eventToChange.setAnnotation(updateEvent.getAnnotation());
@@ -158,16 +168,17 @@ public class AdminEventService {
         }
 
         return EventDtoMapper.toFullDto(eventRepository.save(eventToChange),
-                categoryRepository.findById(eventToChange.getCategoryId()).get(),
-                userRepository.findById(eventToChange.getInitiatorId()).get());
+                categoryRepository.findById(eventToChange.getCategoryId())
+                        .orElseThrow(()
+                                -> new NotFoundException("category id=" + eventToChange.getCategoryId() + " not found")),
+                userRepository.findById(eventToChange.getInitiatorId())
+                        .orElseThrow(()
+                                -> new NotFoundException("user id=" + eventToChange.getInitiatorId() + " not found")));
     }
 
     public EventFullDto publishEvent(long eventId) {
-        Optional<Event> eventOptional = eventRepository.findById(eventId);
-        if (eventOptional.isEmpty()) {
-            throw new NotFoundException("event id=" + eventId + " not found");
-        }
-        Event eventToPublish = eventOptional.get();
+        Event eventToPublish = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("event id=" + eventId + " not found"));
 
         if (!eventToPublish.getState().equals(EventState.PENDING)) {
             throw new ForbiddenException("event id=" + eventId + " already published or canceled");
@@ -180,17 +191,19 @@ public class AdminEventService {
 
         eventToPublish.setPublishedOn(publicationTime);
         eventToPublish.setState(EventState.PUBLISHED);
+
         return EventDtoMapper.toFullDto(eventRepository.save(eventToPublish),
-                categoryRepository.findById(eventToPublish.getCategoryId()).get(),
-                userRepository.findById(eventToPublish.getInitiatorId()).get());
+                categoryRepository.findById(eventToPublish.getCategoryId())
+                        .orElseThrow(()
+                                -> new NotFoundException("category id=" + eventToPublish.getCategoryId() + " not found")),
+                userRepository.findById(eventToPublish.getInitiatorId())
+                        .orElseThrow(()
+                                -> new NotFoundException("user id=" + eventToPublish.getInitiatorId() + " not found")));
     }
 
     public EventFullDto rejectEvent(long eventId) {
-        Optional<Event> eventOptional = eventRepository.findById(eventId);
-        if (eventOptional.isEmpty()) {
-            throw new NotFoundException("event id=" + eventId + " not found");
-        }
-        Event eventToReject = eventOptional.get();
+        Event eventToReject = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("event id=" + eventId + " not found"));
 
         if (eventToReject.getState().equals(EventState.PUBLISHED)) {
             throw new ForbiddenException("event id=" + eventId + " already published");
@@ -199,7 +212,11 @@ public class AdminEventService {
         eventToReject.setState(EventState.CANCELED);
 
         return EventDtoMapper.toFullDto(eventRepository.save(eventToReject),
-                categoryRepository.findById(eventToReject.getCategoryId()).get(),
-                userRepository.findById(eventToReject.getInitiatorId()).get());
+                categoryRepository.findById(eventToReject.getCategoryId())
+                        .orElseThrow(()
+                                -> new NotFoundException("category id=" + eventToReject.getCategoryId() + " not found")),
+                userRepository.findById(eventToReject.getInitiatorId())
+                        .orElseThrow(()
+                                -> new NotFoundException("user id=" + eventToReject.getInitiatorId() + " not found")));
     }
 }

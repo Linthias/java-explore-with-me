@@ -3,7 +3,6 @@ package ru.yandex.practicum.service.shared.dto;
 import ru.yandex.practicum.service.shared.model.Category;
 import ru.yandex.practicum.service.shared.model.DateTimeFormat;
 import ru.yandex.practicum.service.shared.model.Event;
-//import ru.yandex.practicum.service.shared.model.EventState;
 import ru.yandex.practicum.service.shared.model.User;
 
 public class EventDtoMapper {

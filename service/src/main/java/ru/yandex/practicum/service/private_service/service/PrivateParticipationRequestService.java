@@ -16,9 +16,8 @@ import ru.yandex.practicum.service.shared.storage.ParticipationRequestRepository
 import ru.yandex.practicum.service.shared.storage.UserRepository;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Getter
@@ -33,24 +32,18 @@ public class PrivateParticipationRequestService {
             throw new NotFoundException("user id=" + userId + " not found");
         }
 
-        Optional<Event> eventOptional = eventRepository.findById(eventId);
-        if (eventOptional.isEmpty()) {
-            throw new NotFoundException("event id=" + eventId + " not found");
-        }
-
-        Event event = eventOptional.get();
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("event id=" + eventId + " not found"));
 
         if (event.getInitiatorId() != userId) {
             throw new ForbiddenException("event initiator id=" + event.getInitiatorId() + " and user id=" + userId);
         }
 
         List<ParticipationRequest> requests = participationRequestRepository.findByEventId(eventId);
-        List<ParticipationRequestDto> requestDtos = new ArrayList<>();
-        for (ParticipationRequest request : requests) {
-            requestDtos.add(ParticipationRequestDtoMapper.toRequestDto(request));
-        }
 
-        return requestDtos;
+        return requests.stream()
+                .map(ParticipationRequestDtoMapper::toRequestDto)
+                .collect(Collectors.toList());
     }
 
     public ParticipationRequestDto acceptRequest(long userId, long eventId, long reqId) {
@@ -58,24 +51,18 @@ public class PrivateParticipationRequestService {
             throw new NotFoundException("user id=" + userId + " not found");
         }
 
-        Optional<Event> eventOptional = eventRepository.findById(eventId);
-        if (eventOptional.isEmpty()) {
-            throw new NotFoundException("event id=" + eventId + " not found");
-        }
-        Event event = eventOptional.get();
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("event id=" + eventId + " not found"));
 
         if (event.getInitiatorId() != userId) {
             throw new ForbiddenException("event initiator id=" + event.getInitiatorId() + " and user id=" + userId);
         }
 
-        Optional<ParticipationRequest> requestOptional = participationRequestRepository.findById(reqId);
-        if (requestOptional.isEmpty()) {
-            throw new NotFoundException("participation request id=" + reqId + " not found");
-        }
-        ParticipationRequest request = requestOptional.get();
+        ParticipationRequest request = participationRequestRepository.findById(reqId)
+                .orElseThrow(() -> new NotFoundException("participation request id=" + reqId + " not found"));
 
-        if (!event.isModerationRequired() || event.getParticipantLimit() == 0) {
-            throw new ForbiddenException("event id=" + eventId + " does not require moderation"); // запрос уже одобрен/одобрение не требуется
+        if (!event.isModerationRequired() || event.getParticipantLimit() == 0) { // запрос уже одобрен/одобрение не требуется
+            throw new ForbiddenException("event id=" + eventId + " does not require moderation");
         }
 
         if (event.getConfirmedRequests() >= event.getParticipantLimit()) {
@@ -93,10 +80,9 @@ public class PrivateParticipationRequestService {
             List<ParticipationRequest> requestsToCancel
                     = participationRequestRepository.findByEventIdAndState(eventId, RequestState.PENDING);
 
-            for (ParticipationRequest requestToCancel : requestsToCancel) {
-                requestToCancel.setState(RequestState.REJECTED);
-            }
-            participationRequestRepository.saveAll(requestsToCancel);
+            participationRequestRepository.saveAll(requestsToCancel.stream()
+                    .peek(requestToCancel -> requestToCancel.setState(RequestState.REJECTED))
+                    .collect(Collectors.toList()));
         }
 
         return acceptedRequestDto;
@@ -107,21 +93,15 @@ public class PrivateParticipationRequestService {
             throw new NotFoundException("user id=" + userId + " not found");
         }
 
-        Optional<Event> eventOptional = eventRepository.findById(eventId);
-        if (eventOptional.isEmpty()) {
-            throw new NotFoundException("event id=" + eventId + " not found");
-        }
-        Event event = eventOptional.get();
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("event id=" + eventId + " not found"));
 
         if (event.getInitiatorId() != userId) {
             throw new ForbiddenException("event initiator id=" + event.getInitiatorId() + " and user id=" + userId);
         }
 
-        Optional<ParticipationRequest> requestOptional = participationRequestRepository.findById(reqId);
-        if (requestOptional.isEmpty()) {
-            throw new NotFoundException("participation request id=" + reqId + " not found");
-        }
-        ParticipationRequest request = requestOptional.get();
+        ParticipationRequest request = participationRequestRepository.findById(reqId)
+                .orElseThrow(() -> new NotFoundException("participation request id=" + reqId + " not found"));
 
         request.setState(RequestState.REJECTED);
         return ParticipationRequestDtoMapper.toRequestDto(participationRequestRepository.save(request));
@@ -133,12 +113,10 @@ public class PrivateParticipationRequestService {
         }
 
         List<ParticipationRequest> userRequests = participationRequestRepository.findByRequesterId(userId);
-        List<ParticipationRequestDto> userRequestsDtos = new ArrayList<>();
-        for (ParticipationRequest request : userRequests) {
-            userRequestsDtos.add(ParticipationRequestDtoMapper.toRequestDto(request));
-        }
 
-        return userRequestsDtos;
+        return userRequests.stream()
+                .map(ParticipationRequestDtoMapper::toRequestDto)
+                .collect(Collectors.toList());
     }
 
     public ParticipationRequestDto addRequest(long userId, long eventId) {
@@ -146,11 +124,8 @@ public class PrivateParticipationRequestService {
             throw new NotFoundException("user id=" + userId + " not found");
         }
 
-        Optional<Event> eventOptional = eventRepository.findById(eventId);
-        if (eventOptional.isEmpty()) {
-            throw new NotFoundException("event id=" + eventId + " not found");
-        }
-        Event event = eventOptional.get();
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("event id=" + eventId + " not found"));
 
         if (event.getInitiatorId() == userId) { // нельзя подать заявку на собственное событие
             throw new ForbiddenException("event initiator id=" + event.getInitiatorId() + " can not request to enter own event");
@@ -185,22 +160,17 @@ public class PrivateParticipationRequestService {
             throw new NotFoundException("user id=" + userId + " not found");
         }
 
-        Optional<ParticipationRequest> requestOptional = participationRequestRepository.findById(reqId);
-        if (requestOptional.isEmpty()) {
-            throw new NotFoundException("participation request id=" + reqId + " not found");
-        }
-        ParticipationRequest requestToCancel = requestOptional.get();
+        ParticipationRequest requestToCancel = participationRequestRepository.findById(reqId)
+                .orElseThrow(() -> new NotFoundException("participation request id=" + reqId + " not found"));
 
         if (requestToCancel.getRequesterId() != userId) {
             throw new ForbiddenException("user id=" + userId + " can not cancel not owned request id=" + reqId);
         }
 
         if (requestToCancel.getState().equals(RequestState.CONFIRMED)) { // если запрос уже одобрен
-            Optional<Event> eventOptional = eventRepository.findById(requestToCancel.getEventId());
-            if (eventOptional.isEmpty()) {
-                throw new NotFoundException("event id=" + requestToCancel.getEventId() + " not found");
-            }
-            Event eventToRemoveOneRequest = eventOptional.get();
+            Event eventToRemoveOneRequest = eventRepository.findById(requestToCancel.getEventId())
+                    .orElseThrow(() -> new NotFoundException("event id=" + requestToCancel.getEventId() + " not found"));
+
             eventToRemoveOneRequest.setConfirmedRequests(eventToRemoveOneRequest.getConfirmedRequests() - 1);
             eventRepository.save(eventToRemoveOneRequest);
         }

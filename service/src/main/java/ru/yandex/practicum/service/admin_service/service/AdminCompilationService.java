@@ -23,7 +23,6 @@ import ru.yandex.practicum.service.shared.storage.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 @Getter
@@ -48,8 +47,13 @@ public class AdminCompilationService {
         List<Category> eventsCategories = categoryRepository.findByIdIn(categoryIds);
         List<User> eventsOwners = userRepository.findByIdIn(initiatorIds);
         for (Event event : eventsForNewCompilation) {
-            Category category = eventsCategories.stream().filter(cat -> cat.getId() == event.getCategoryId()).findAny().get();
-            User user = eventsOwners.stream().filter(user1 -> user1.getId() == event.getInitiatorId()).findAny().get();
+            Category category = eventsCategories.stream().filter(cat -> cat.getId() == event.getCategoryId()).findAny()
+                    .orElseThrow(() -> new NotFoundException("category id=" + event.getCategoryId() + " not found"));
+
+            User user = eventsOwners.stream().filter(user1 -> user1.getId() == event.getInitiatorId()).findAny()
+                    .orElseThrow(() ->
+                            new NotFoundException("user id=" + event.getInitiatorId() + " not found"));
+
             eventsForNewCompilationDtos.add(EventDtoMapper.toShortDto(event, category, user));
         }
 
@@ -89,13 +93,11 @@ public class AdminCompilationService {
             throw new NotFoundException("compilation id=" + compId + " not found");
         }
 
-        Optional<CompilationEvents> eventInCompilation
-                = compilationEventsRepository.findByCompilationIdAndEventId(compId, eventId);
-        if (eventInCompilation.isEmpty()) {
-            throw new NotFoundException("event id=" + eventId + " not found");
-        }
+        CompilationEvents eventInCompilation
+                = compilationEventsRepository.findByCompilationIdAndEventId(compId, eventId)
+                .orElseThrow(() -> new NotFoundException("event id=" + eventId + " not found"));
 
-        compilationEventsRepository.deleteById(eventInCompilation.get().getId());
+        compilationEventsRepository.deleteById(eventInCompilation.getId());
     }
 
     public void addEventToCompilation(long compId, long eventId) {
@@ -103,9 +105,7 @@ public class AdminCompilationService {
             throw new NotFoundException("compilation id=" + compId + " not found");
         }
 
-        Optional<CompilationEvents> eventInCompilation
-                = compilationEventsRepository.findByCompilationIdAndEventId(compId, eventId);
-        if (eventInCompilation.isPresent()) {
+        if (compilationEventsRepository.findByCompilationIdAndEventId(compId, eventId).isPresent()) {
             throw new ForbiddenException("event id=" + eventId + " already present in compilation id=" + compId);
         }
 
@@ -116,22 +116,16 @@ public class AdminCompilationService {
     }
 
     public void unpinCompilation(long compId) {
-        Optional<Compilation> compilationOptional = compilationRepository.findById(compId);
-        if (compilationOptional.isEmpty()) {
-            throw new NotFoundException("compilation id=" + compId + " not found");
-        }
-        Compilation compilationToUnpin = compilationOptional.get();
+        Compilation compilationToUnpin = compilationRepository.findById(compId)
+                .orElseThrow(() -> new NotFoundException("compilation id=" + compId + " not found"));
 
         compilationToUnpin.setPinned(false);
         compilationRepository.save(compilationToUnpin);
     }
 
     public void pinCompilation(long compId) {
-        Optional<Compilation> compilationOptional = compilationRepository.findById(compId);
-        if (compilationOptional.isEmpty()) {
-            throw new NotFoundException("compilation id=" + compId + " not found");
-        }
-        Compilation compilationToPin = compilationOptional.get();
+        Compilation compilationToPin = compilationRepository.findById(compId)
+                .orElseThrow(() -> new NotFoundException("compilation id=" + compId + " not found"));
 
         compilationToPin.setPinned(true);
         compilationRepository.save(compilationToPin);
