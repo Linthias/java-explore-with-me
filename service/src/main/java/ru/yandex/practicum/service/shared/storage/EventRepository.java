@@ -4,6 +4,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.service.shared.model.Event;
+import ru.yandex.practicum.service.shared.model.EventState;
 
 import java.util.List;
 
@@ -14,4 +15,6 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     Integer countByCategoryId(long catId);
 
     List<Event> findByInitiatorId(long initiatorId, Pageable pageable);
+
+    List<Event> findByInitiatorIdAndState(long initiatorId, EventState state, Pageable pageable);
 }

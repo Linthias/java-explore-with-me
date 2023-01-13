@@ -2,6 +2,7 @@ package ru.yandex.practicum.service.private_service.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,8 +16,10 @@ import ru.yandex.practicum.service.private_service.dto.ParticipationRequestDto;
 import ru.yandex.practicum.service.private_service.dto.UpdateEventRequest;
 import ru.yandex.practicum.service.private_service.service.PrivateEventService;
 import ru.yandex.practicum.service.private_service.service.PrivateParticipationRequestService;
+import ru.yandex.practicum.service.private_service.service.PrivateUserFollowerService;
 import ru.yandex.practicum.service.shared.dto.EventFullDto;
 import ru.yandex.practicum.service.shared.dto.EventShortDto;
+import ru.yandex.practicum.service.shared.dto.UserShortDto;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -28,6 +31,7 @@ import java.util.List;
 public class PrivateController {
     private final PrivateEventService eventService;
     private final PrivateParticipationRequestService participationRequestService;
+    private final PrivateUserFollowerService userFollowerService;
 
     @GetMapping("/{userId}/events")
     public List<EventShortDto> getUsersEvents(@PathVariable long userId,
@@ -106,5 +110,28 @@ public class PrivateController {
                                                     @PathVariable long reqId) {
         log.info("PATCH: /users/{}/requests/{}/cancel", userId, reqId);
         return participationRequestService.cancelOwnRequest(userId, reqId);
+    }
+
+    @PostMapping("/{userId}/followers/{followerId}")
+    public UserShortDto postNewFollower(@PathVariable long userId,
+                                        @PathVariable long followerId) {
+        log.info("POST: /users/{}/followers/{}", userId, followerId);
+        return userFollowerService.addNewFollower(userId, followerId);
+    }
+
+    @DeleteMapping("/{userId}/followers/{followerId}")
+    public void deleteFollower(@PathVariable long userId,
+                               @PathVariable long followerId) {
+        log.info("DELETE: /users/{}/followers/{}", userId, followerId);
+        userFollowerService.removeFollower(userId, followerId);
+    }
+
+    @GetMapping("/{userId}/followers/{followerId}")
+    public List<EventShortDto> getFolloweeEvents(@PathVariable long userId,
+                                                 @PathVariable long followerId,
+                                                 @RequestParam(required = false, defaultValue = "0") Integer from,
+                                                 @RequestParam(required = false, defaultValue = "10") Integer size) {
+        log.info("GET: /users/{}/followers/{}?from={}&size={}", userId, followerId, from, size);
+        return userFollowerService.getFolloweeEvents(userId, followerId, from, size);
     }
 }

@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 public class CompilationEvents {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     @Column(name = "compilation_id", nullable = false)
     private long compilationId;
