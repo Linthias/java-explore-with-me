@@ -3,7 +3,7 @@ package ru.yandex.practicum.service.public_service.service;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import ru.yandex.practicum.service.shared.dto.CompilationDto;
 import ru.yandex.practicum.service.shared.dto.CompilationDtoMapper;
 import ru.yandex.practicum.service.shared.dto.EventDtoMapper;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Getter
-@Component
+@Service
 public class PublicCompilationService {
     private final CompilationRepository compilationRepository;
     private final CompilationEventsRepository compilationEventsRepository;

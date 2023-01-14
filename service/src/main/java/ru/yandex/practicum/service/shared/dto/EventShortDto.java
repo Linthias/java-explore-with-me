@@ -14,7 +14,7 @@ public class EventShortDto {
     protected CategoryDto category;
     protected long confirmedRequests;
     protected String eventDate;
-    protected long id;
+    protected Long id;
     protected UserShortDto initiator;
     protected boolean paid;
     protected String title;

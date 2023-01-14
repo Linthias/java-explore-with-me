@@ -2,7 +2,7 @@ package ru.yandex.practicum.service.admin_service.service;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import ru.yandex.practicum.service.admin_service.dto.AdminUpdateEventRequest;
 import ru.yandex.practicum.service.shared.dto.EventDtoMapper;
 import ru.yandex.practicum.service.shared.dto.EventFullDto;
@@ -33,7 +33,7 @@ import java.util.Set;
 
 @RequiredArgsConstructor
 @Getter
-@Component
+@Service
 public class AdminEventService {
     private final EventRepository eventRepository;
     private final CategoryRepository categoryRepository;

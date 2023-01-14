@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import ru.yandex.practicum.service.shared.dto.EventDtoMapper;
 import ru.yandex.practicum.service.shared.dto.EventShortDto;
 import ru.yandex.practicum.service.shared.dto.UserDtoMapper;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Getter
-@Component
+@Service
 public class PrivateUserFollowerService {
     private final UserFollowerRepository userFollowerRepository;
     private final UserRepository userRepository;
@@ -39,20 +39,20 @@ public class PrivateUserFollowerService {
         if (userId == followerId) {
             throw new BadRequestException("user id=" + userId + " can not follow themselves");
         }
-        if (!userRepository.existsById(userId)) {
-            throw new NotFoundException("user id=" + userId + " not found");
-        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("user id=" + userId + " not found"));
 
         User follower = userRepository.findById(followerId)
-                .orElseThrow(() -> new NotFoundException("user id=" + userId + " not found"));
+                .orElseThrow(() -> new NotFoundException("user id=" + followerId + " not found"));
 
         if (userFollowerRepository.existsByUserIdAndFollowerId(userId, followerId)) {
             throw new ForbiddenException("user id=" + userId + " already has follower id=" + followerId);
         }
 
         userFollowerRepository.save(UserFollower.builder()
-                .userId(userId)
-                .followerId(followerId)
+                .user(user)
+                .follower(follower)
                 .build());
 
         return UserDtoMapper.toShortDto(follower);

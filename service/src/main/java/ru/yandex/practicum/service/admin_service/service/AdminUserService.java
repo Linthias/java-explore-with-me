@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import ru.yandex.practicum.service.admin_service.dto.NewUserRequest;
 import ru.yandex.practicum.service.shared.dto.UserDto;
 import ru.yandex.practicum.service.shared.dto.UserDtoMapper;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Getter
-@Component
+@Service
 public class AdminUserService {
     private final UserRepository userRepository;
 

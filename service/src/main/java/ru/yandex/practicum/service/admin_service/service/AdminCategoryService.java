@@ -2,7 +2,7 @@ package ru.yandex.practicum.service.admin_service.service;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import ru.yandex.practicum.service.admin_service.dto.NewCategoryDto;
 import ru.yandex.practicum.service.shared.dto.CategoryDto;
 import ru.yandex.practicum.service.shared.dto.CategoryDtoMapper;
@@ -19,7 +19,7 @@ import java.util.Set;
 
 @RequiredArgsConstructor
 @Getter
-@Component
+@Service
 public class AdminCategoryService {
     private final CategoryRepository categoryRepository;
     private final EventRepository eventRepository;

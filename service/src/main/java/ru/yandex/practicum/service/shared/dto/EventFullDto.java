@@ -16,7 +16,7 @@ public class EventFullDto {
     private String createdOn;
     private String description;
     private String eventDate;
-    private long id;
+    private Long id;
     private UserShortDto initiator;
     private Location location;
     private boolean paid;
