@@ -22,7 +22,8 @@ public class StatisticsController {
 
     @PostMapping("/hit")
     public EndpointHitDto postHit(@Valid @RequestBody EndpointHitDto dto) {
-        log.info("POST: /hit");
+        log.info("POST: /hit  body:{app={} uri={} ip={} timestamp={}}",
+                dto.getApp(), dto.getUri(), dto.getIp(), dto.getTimestamp());
         return endpointHitService.addHit(dto);
     }
 
@@ -31,7 +32,7 @@ public class StatisticsController {
                                          @RequestParam String end,
                                          @RequestParam(required = false) String[] uris,
                                          @RequestParam(required = false, defaultValue = "false") Boolean unique) {
-        log.info("GET: /stats");
+        log.info("GET: /stats?start={}&end={}&uris={}&unique={}", start, end, uris, unique);
         return endpointHitService.getStats(start, end, uris, unique);
     }
 }

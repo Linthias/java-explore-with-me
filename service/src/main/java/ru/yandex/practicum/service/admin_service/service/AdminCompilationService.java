@@ -2,7 +2,7 @@ package ru.yandex.practicum.service.admin_service.service;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import ru.yandex.practicum.service.admin_service.dto.NewCompilationDto;
 import ru.yandex.practicum.service.shared.dto.CompilationDto;
 import ru.yandex.practicum.service.shared.dto.CompilationDtoMapper;
@@ -26,7 +26,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Getter
-@Component
+@Service
 public class AdminCompilationService {
     private final CompilationRepository compilationRepository;
     private final CompilationEventsRepository compilationEventsRepository;

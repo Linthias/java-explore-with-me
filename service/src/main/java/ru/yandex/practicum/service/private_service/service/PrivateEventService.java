@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import ru.yandex.practicum.service.private_service.dto.NewEventDto;
 import ru.yandex.practicum.service.private_service.dto.UpdateEventRequest;
 import ru.yandex.practicum.service.shared.dto.EventDtoMapper;
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Getter
-@Component
+@Service
 public class PrivateEventService {
     private final EventRepository eventRepository;
     private final CategoryRepository categoryRepository;

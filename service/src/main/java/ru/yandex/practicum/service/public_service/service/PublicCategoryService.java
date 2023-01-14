@@ -3,7 +3,7 @@ package ru.yandex.practicum.service.public_service.service;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import ru.yandex.practicum.service.shared.dto.CategoryDto;
 import ru.yandex.practicum.service.shared.dto.CategoryDtoMapper;
 import ru.yandex.practicum.service.shared.exceptions.NotFoundException;
@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Getter
-@Component
+@Service
 public class PublicCategoryService {
     private final CategoryRepository categoryRepository;
 

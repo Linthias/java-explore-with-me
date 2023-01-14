@@ -2,7 +2,7 @@ package ru.yandex.practicum.statistics.service;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import ru.yandex.practicum.statistics.dto.EndpointHitDto;
 import ru.yandex.practicum.statistics.dto.EndpointHitDtoMapper;
 import ru.yandex.practicum.statistics.dto.ViewStats;
@@ -23,7 +23,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Getter
-@Component
+@Service
 public class EndpointHitService {
     private final EndpointHitRepository endpointHitRepository;
     private final EntityManager entityManager;

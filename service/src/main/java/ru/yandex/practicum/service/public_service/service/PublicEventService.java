@@ -2,7 +2,7 @@ package ru.yandex.practicum.service.public_service.service;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import ru.yandex.practicum.service.shared.dto.EventDtoMapper;
 import ru.yandex.practicum.service.shared.dto.EventFullDto;
 import ru.yandex.practicum.service.shared.dto.EventShortDto;
@@ -30,7 +30,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Getter
-@Component
+@Service
 public class PublicEventService {
     private final EventRepository eventRepository;
     private final CategoryRepository categoryRepository;

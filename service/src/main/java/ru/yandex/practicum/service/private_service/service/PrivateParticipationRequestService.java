@@ -2,7 +2,7 @@ package ru.yandex.practicum.service.private_service.service;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import ru.yandex.practicum.service.private_service.dto.ParticipationRequestDto;
 import ru.yandex.practicum.service.private_service.dto.ParticipationRequestDtoMapper;
 import ru.yandex.practicum.service.shared.exceptions.ForbiddenException;
@@ -13,6 +13,7 @@ import ru.yandex.practicum.service.shared.model.ParticipationRequest;
 import ru.yandex.practicum.service.shared.model.RequestState;
 import ru.yandex.practicum.service.shared.storage.EventRepository;
 import ru.yandex.practicum.service.shared.storage.ParticipationRequestRepository;
+import ru.yandex.practicum.service.shared.storage.UserFollowerRepository;
 import ru.yandex.practicum.service.shared.storage.UserRepository;
 
 import java.time.LocalDateTime;
@@ -21,11 +22,12 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Getter
-@Component
+@Service
 public class PrivateParticipationRequestService {
     private final ParticipationRequestRepository participationRequestRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
+    private final UserFollowerRepository userFollowerRepository;
 
     public List<ParticipationRequestDto> getEventRequests(long userId, long eventId) {
         if (!userRepository.existsById(userId)) {
@@ -61,7 +63,8 @@ public class PrivateParticipationRequestService {
         ParticipationRequest request = participationRequestRepository.findById(reqId)
                 .orElseThrow(() -> new NotFoundException("participation request id=" + reqId + " not found"));
 
-        if (!event.isModerationRequired() || event.getParticipantLimit() == 0) { // запрос уже одобрен/одобрение не требуется
+        // запрос уже одобрен или отклонен/одобрение не требуется/запрос от подписчика
+        if (!request.getState().equals(RequestState.PENDING)) {
             throw new ForbiddenException("event id=" + eventId + " does not require moderation");
         }
 
@@ -136,7 +139,8 @@ public class PrivateParticipationRequestService {
         if (participationRequestRepository.countByEventIdAndRequesterId(eventId, userId) != 0) { // уже есть заявка
             throw new ForbiddenException("event id=" + eventId + " already has request from user id=" + userId);
         }
-        if (event.getConfirmedRequests() == event.getParticipantLimit()) {
+        if (event.getConfirmedRequests() == event.getParticipantLimit()
+                && event.getParticipantLimit() > 0) {
             throw new ForbiddenException("event id=" + eventId + " already has max number of participants");
         }
 
@@ -146,13 +150,30 @@ public class PrivateParticipationRequestService {
                 .requesterId(userId)
                 .build();
 
-        if (event.getParticipantLimit() == 0 || !event.isModerationRequired()) {
-            requestToAdd.setState(RequestState.CONFIRMED); // если у события нет модерации запросов
+        // если у события нет модерации запросов/ограничения на кол-во заявок/запрос от подписчика
+        if (event.getParticipantLimit() == 0
+                || !event.isModerationRequired()
+                || userFollowerRepository.existsByUserIdAndFollowerId(event.getInitiatorId(), userId)) {
+            requestToAdd.setState(RequestState.CONFIRMED);
+            event.setConfirmedRequests(event.getConfirmedRequests() + 1);
+            eventRepository.save(event);
         } else {
             requestToAdd.setState(RequestState.PENDING);
         }
 
-        return ParticipationRequestDtoMapper.toRequestDto(participationRequestRepository.save(requestToAdd));
+        ParticipationRequestDto requestDto
+                = ParticipationRequestDtoMapper.toRequestDto(participationRequestRepository.saveAndFlush(requestToAdd));
+
+        if (event.getConfirmedRequests() == event.getParticipantLimit()) {  // отклонение прочих заявок, если лимит достигнут
+            List<ParticipationRequest> requestsToCancel
+                    = participationRequestRepository.findByEventIdAndState(eventId, RequestState.PENDING);
+
+            participationRequestRepository.saveAll(requestsToCancel.stream()
+                    .peek(requestToCancel -> requestToCancel.setState(RequestState.REJECTED))
+                    .collect(Collectors.toList()));
+        }
+
+        return requestDto;
     }
 
     public ParticipationRequestDto cancelOwnRequest(long userId, long reqId) {
@@ -171,7 +192,9 @@ public class PrivateParticipationRequestService {
             Event eventToRemoveOneRequest = eventRepository.findById(requestToCancel.getEventId())
                     .orElseThrow(() -> new NotFoundException("event id=" + requestToCancel.getEventId() + " not found"));
 
-            eventToRemoveOneRequest.setConfirmedRequests(eventToRemoveOneRequest.getConfirmedRequests() - 1);
+            if (eventToRemoveOneRequest.getConfirmedRequests() > 0) {
+                eventToRemoveOneRequest.setConfirmedRequests(eventToRemoveOneRequest.getConfirmedRequests() - 1);
+            }
             eventRepository.save(eventToRemoveOneRequest);
         }
         requestToCancel.setState(RequestState.CANCELED);
