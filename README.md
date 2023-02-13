@@ -1,8 +1,5 @@
 # Explore With Me app
 
-Ссылка на пулл-реквест:  
-https://github.com/Linthias/java-explore-with-me/pull/2
-
 Архитектура проекта:  
 ![](/images/architecture.png)
 
